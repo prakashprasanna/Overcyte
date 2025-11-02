@@ -79,6 +79,10 @@ export async function updatePostAction(formData: FormData) {
       .where(eq(posts.id, validated.data.id))
       .returning();
 
+    if (!updatedPost) {
+      return { error: "Failed to update post" };
+    }
+
     revalidatePath("/dashboard");
     return { success: true, post: updatedPost };
   } catch (error) {
@@ -90,7 +94,7 @@ export async function updatePostAction(formData: FormData) {
 export async function deletePostAction(formData: FormData) {
   const postId = formData.get("postId")?.toString();
 
-  if (!postId || isNaN(parseInt(postId))) {
+  if (!postId || isNaN(parseInt(postId)) || parseInt(postId) <= 0) {
     return { error: "Invalid post ID" };
   }
 
