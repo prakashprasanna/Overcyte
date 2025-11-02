@@ -3,10 +3,12 @@ import { db } from "@/lib/db";
 import { posts } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/utils";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
 
-type Payload = {
-  action: "like" | "unlike";
-};
+// use zod to validate
+const likePayloadSchema = z.object({
+  action: z.enum(["like", "unlike"]),
+});
 
 export async function POST(
   request: NextRequest,
@@ -23,40 +25,44 @@ export async function POST(
     const resolvedParams = await params;
     const postId = parseInt(resolvedParams.id);
 
-    if (isNaN(postId)) {
+    if (isNaN(postId) || postId <= 0) {
       return NextResponse.json({ error: "Invalid post ID" }, { status: 400 });
     }
 
-    const body: Payload = await request.json();
+    const body = await request.json();
+    const validated = likePayloadSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: "Invalid request body", details: validated.error.issues },
+        { status: 400 }
+      );
+    }
 
-    if (body.action === "like") {
-      await db
+    // Use validated.data instead of body to ensure type safety
+    let updatedPost;
+    if (validated.data.action === "like") {
+      // use returning() to get updated row 
+      [updatedPost] = await db
         .update(posts)
         .set({
           likeCount: sql`${posts.likeCount} + 1`,
-          ...body,
         })
-        .where(eq(posts.id, postId));
+        .where(eq(posts.id, postId))
+        .returning();
     } else {
-      await db
+      [updatedPost] = await db
         .update(posts)
         .set({
           likeCount: sql`CASE WHEN ${posts.likeCount} > 0 THEN ${posts.likeCount} - 1 ELSE 0 END`,
-          ...body,
         })
-        .where(eq(posts.id, postId));
+        .where(eq(posts.id, postId))
+        .returning();
     }
-
-    const [updatedPost] = await db
-      .select()
-      .from(posts)
-      .where(eq(posts.id, postId))
-      .limit(1);
 
     return NextResponse.json({
       success: true,
       post: updatedPost,
-      message: `Post ${body.action}d successfully`,
+      message: `Post ${validated.data.action}d successfully`,
     });
   } catch (error) {
     console.error("Like/unlike error:", error);
