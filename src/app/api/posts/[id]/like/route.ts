@@ -23,7 +23,7 @@ export async function POST(
     const resolvedParams = await params;
     const postId = parseInt(resolvedParams.id);
 
-    if (isNaN(postId)) {
+    if (isNaN(postId) || postId <= 0) {
       return NextResponse.json({ error: "Invalid post ID" }, { status: 400 });
     }
 

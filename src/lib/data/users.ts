@@ -3,6 +3,11 @@ import { users, posts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function getUserById(userId: number) {
+  // Validate userId is a positive integer
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return null;
+  }
+
   const [user] = await db
     .select()
     .from(users)
@@ -12,6 +17,11 @@ export async function getUserById(userId: number) {
 }
 
 export async function getUserWithPosts(userId: number) {
+  // Validate userId is a positive integer
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return null;
+  }
+
   const user = await getUserById(userId);
   if (!user) return null;
 

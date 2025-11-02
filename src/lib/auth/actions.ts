@@ -19,8 +19,8 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  username: z.string(),
-  password: z.string(),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export async function registerAction(_prevState: any, formData: FormData) {
