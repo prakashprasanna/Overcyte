@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useTransition } from "react";
 import { LikeButton } from "./like-button";
 import { Post, User } from "@/lib/db/types";
 
@@ -13,6 +13,7 @@ interface PostsListProps {
 export function PostsList({ posts }: PostsListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "likes">("date");
+  const [isPending, startTransition] = useTransition();
 
   const processedPosts = useMemo(() => {
     let filtered = posts;
@@ -49,12 +50,20 @@ export function PostsList({ posts }: PostsListProps) {
           type="text"
           placeholder="Search posts..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            startTransition(() => {
+              setSearchTerm(e.target.value);
+            });
+          }}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as "date" | "likes")}
+          onChange={(e) => {
+            startTransition(() => {
+              setSortBy(e.target.value as "date" | "likes");
+            });
+          }}
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="date">Sort by Date</option>

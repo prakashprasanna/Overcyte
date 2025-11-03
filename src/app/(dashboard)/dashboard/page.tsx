@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getSession } from "@/lib/auth/utils";
 import { getUserWithPosts } from "@/lib/data/users";
 import { getPostsWithAuthors, getAllPosts } from "@/lib/data/posts";
@@ -44,7 +45,26 @@ export default async function DashboardPage() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <DashboardStats />
+          <Suspense
+            fallback={
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg animate-pulse">
+                  <div className="h-6 bg-blue-200 rounded mb-2"></div>
+                  <div className="h-8 bg-blue-200 rounded w-16"></div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg animate-pulse">
+                  <div className="h-6 bg-green-200 rounded mb-2"></div>
+                  <div className="h-8 bg-green-200 rounded w-16"></div>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg animate-pulse">
+                  <div className="h-6 bg-red-200 rounded mb-2"></div>
+                  <div className="h-8 bg-red-200 rounded w-16"></div>
+                </div>
+              </div>
+            }
+          >
+            <DashboardStats />
+          </Suspense>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1">
@@ -63,7 +83,22 @@ export default async function DashboardPage() {
               </div>
 
               <div className="mt-6 bg-white shadow rounded-lg p-6">
-                <PrefetchedPosts postsPromise={postsPromise} />
+                <Suspense
+                  fallback={
+                    <div className="space-y-3">
+                      <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-md animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-24"></div>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                >
+                  <PrefetchedPosts postsPromise={postsPromise} />
+                </Suspense>
               </div>
             </div>
 
