@@ -1,10 +1,10 @@
 "use client";
 
-import { User } from "@/lib/db/types";
+import { SafeUser } from "@/lib/db/types";
 import { memo, useMemo } from "react";
 
 interface UserProfileProps {
-  user: User;
+  user: SafeUser;
 }
 
 function UserProfileComponent({ user }: UserProfileProps) {

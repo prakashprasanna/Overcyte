@@ -2,11 +2,11 @@
 
 import { useState, useMemo, memo, useTransition } from "react";
 import { LikeButton } from "./like-button";
-import { Post, User } from "@/lib/db/types";
+import { Post, SafeUser } from "@/lib/db/types";
 
 interface PostsListProps {
   posts: (Post & {
-    author: User;
+    author: SafeUser | null;
   })[];
 }
 
@@ -80,7 +80,7 @@ export function PostsList({ posts }: PostsListProps) {
   );
 }
 
-const PostItem = memo(({ post }: { post: Post & { author: User } }) => {
+const PostItem = memo(({ post }: { post: Post & { author: SafeUser | null } }) => {
   const formattedDate = useMemo(
     () => new Date(post.createdAt).toLocaleDateString(),
     [post.createdAt]
