@@ -1,12 +1,18 @@
 "use client";
 
 import { User } from "@/lib/db/types";
+import { memo, useMemo } from "react";
 
 interface UserProfileProps {
   user: User;
 }
 
-export function UserProfile({ user }: UserProfileProps) {
+function UserProfileComponent({ user }: UserProfileProps) {
+  const formattedDate = useMemo(
+    () => new Date(user.createdAt).toLocaleDateString(),
+    [user.createdAt]
+  );
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <div className="flex items-center">
@@ -19,11 +25,11 @@ export function UserProfile({ user }: UserProfileProps) {
         </div>
         <div className="ml-4">
           <h3 className="text-lg font-medium text-gray-900">{user.username}</h3>
-          <p className="text-sm text-gray-500">
-            Member since {new Date(user.createdAt).toLocaleDateString()}
-          </p>
+          <p className="text-sm text-gray-500">Member since {formattedDate}</p>
         </div>
       </div>
     </div>
   );
 }
+
+export const UserProfile = memo(UserProfileComponent);
