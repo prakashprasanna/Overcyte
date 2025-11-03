@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 
 interface Item {
   id: number;
@@ -15,44 +15,52 @@ interface Item {
 
 interface PerformanceDemoItemProps {
   item: Item;
-  searchTerm: string; // This prop causes unnecessary re-renders
+  searchTerm: string;
 }
 
-export function PerformanceDemoItem({ item, searchTerm }: PerformanceDemoItemProps) {
+function PerformanceDemoItemComponent({ item, searchTerm }: PerformanceDemoItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Expensive computation that runs on every render - performance issue #3
-  const highlightedName = item.name.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
-    <span
-      key={i}
-      className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
-    >
-      {part}
-    </span>
-  ));
+  // Memoize expensive highlighting computation - only recomputes when item or searchTerm changes
+  const highlightedName = useMemo(() => {
+    if (!searchTerm) return null;
+    return item.name.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
+      <span
+        key={i}
+        className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
+      >
+        {part}
+      </span>
+    ));
+  }, [item.name, searchTerm]);
 
-  // Another expensive computation - performance issue #4
-  const highlightedDescription = item.description.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
-    <span
-      key={i}
-      className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
-    >
-      {part}
-    </span>
-  ));
+  // Memoize expensive highlighting computation - only recomputes when item or searchTerm changes
+  const highlightedDescription = useMemo(() => {
+    if (!searchTerm) return null;
+    return item.description.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
+      <span
+        key={i}
+        className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
+      >
+        {part}
+      </span>
+    ));
+  }, [item.description, searchTerm]);
 
-  // Expensive operation that doesn't need to run on every render
-  const relatedItems = Array.from({ length: 10 }, (_, i) => ({
-    id: item.id * 100 + i,
-    name: `Related ${i}`,
-  }));
+  // Memoize relatedItems - only recomputes when item.id changes
+  const relatedItems = useMemo(() => {
+    return Array.from({ length: 10 }, (_, i) => ({
+      id: item.id * 100 + i,
+      name: `Related ${i}`,
+    }));
+  }, [item.id]);
 
-  // Simulating some complex calculations
-  const discountPrice = item.price * 0.9;
-  const taxAmount = discountPrice * 0.08;
-  const totalPrice = (discountPrice + taxAmount) * quantity;
+  // Memoize calculations - only recomputes when item.price or quantity changes
+  const discountPrice = useMemo(() => item.price * 0.9, [item.price]);
+  const taxAmount = useMemo(() => discountPrice * 0.08, [discountPrice]);
+  const totalPrice = useMemo(() => (discountPrice + taxAmount) * quantity, [discountPrice, taxAmount, quantity]);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -167,3 +175,6 @@ export function PerformanceDemoItem({ item, searchTerm }: PerformanceDemoItemPro
     </div>
   );
 }
+
+// Memoizes the component to prevent unnecessary re-renders
+export const PerformanceDemoItem = memo(PerformanceDemoItemComponent);

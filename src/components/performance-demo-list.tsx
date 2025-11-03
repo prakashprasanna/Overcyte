@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PerformanceDemoItem } from "./performance-demo-item";
 
 // Generate a large dataset
@@ -19,38 +19,43 @@ const generateItems = (count: number) => {
 
 const ITEMS = generateItems(5000); // 5000 items to cause performance issues
 
+// Memoize categories
+const categories = ["all", ...Array.from(new Set(ITEMS.map(item => item.category)))];
+
 export function PerformanceDemoList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("name");
   const [showInStockOnly, setShowInStockOnly] = useState(false);
 
-  // This filter runs on every render - performance issue #1
-  const filteredItems = ITEMS.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
-    const matchesStock = !showInStockOnly || item.inStock;
-    
-    return matchesSearch && matchesCategory && matchesStock;
-  });
+  // Memoize filtered items - only recomputes when filters change
+  const filteredItems = useMemo(() => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return ITEMS.filter((item) => {
+      const matchesSearch = item.name.toLowerCase().includes(lowerSearchTerm) ||
+                           item.description.toLowerCase().includes(lowerSearchTerm);
+      const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+      const matchesStock = !showInStockOnly || item.inStock;
+      
+      return matchesSearch && matchesCategory && matchesStock;
+    });
+  }, [searchTerm, selectedCategory, showInStockOnly]);
 
-  // This sort runs on every render - performance issue #2
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    switch (sortBy) {
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "price":
-        return a.price - b.price;
-      case "rating":
-        return b.rating - a.rating;
-      default:
-        return 0;
-    }
-  });
-
-  // Generate categories for filter
-  const categories = ["all", ...Array.from(new Set(ITEMS.map(item => item.category)))];
+  // Memoize sorted items - only recomputes when filteredItems or sortBy changes
+  const sortedItems = useMemo(() => {
+    return [...filteredItems].sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price":
+          return a.price - b.price;
+        case "rating":
+          return b.rating - a.rating;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredItems, sortBy]);
 
   return (
     <div className="space-y-6">
@@ -126,7 +131,7 @@ export function PerformanceDemoList() {
           <PerformanceDemoItem
             key={item.id}
             item={item}
-            searchTerm={searchTerm} // Passing searchTerm causes unnecessary re-renders
+            searchTerm={searchTerm}
           />
         ))}
       </div>
