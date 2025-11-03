@@ -1,16 +1,20 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, memo, useEffect } from "react";
 
 interface LikeButtonProps {
   postId: number;
   initialLikeCount: number;
 }
 
-export function LikeButton({ postId, initialLikeCount }: LikeButtonProps) {
+function LikeButtonComponent({ postId, initialLikeCount }: LikeButtonProps) {
   const [liked, setLiked] = useState(false);
   const [optimisticCount, setOptimisticCount] = useState(initialLikeCount);
+
+  useEffect(() => {
+    setOptimisticCount(initialLikeCount);
+  }, [initialLikeCount]);
 
   const likeMutation = useMutation({
     mutationFn: async ({ action }: { action: "like" | "unlike" }) => {
@@ -31,15 +35,30 @@ export function LikeButton({ postId, initialLikeCount }: LikeButtonProps) {
       return response.json();
     },
     onMutate: async ({ action }) => {
+      // Capturing previous state before updating
+      const previousState = { liked, count: optimisticCount };
+      
       setLiked(action === "like");
-      setOptimisticCount((prev) =>
-        action === "like" ? prev + 1 : Math.max(0, prev - 1)
-      );
+      setOptimisticCount((prev) => {
+        const currentCount = Math.max(0, prev);
+        return action === "like" ? currentCount + 1 : Math.max(0, currentCount - 1);
+      });
+      
+      return previousState;
     },
-    onError: (error) => {
+    onSuccess: (data) => {
+      if (data?.post?.likeCount !== undefined) {
+        const serverCount = Math.max(0, data.post.likeCount);
+        setOptimisticCount(serverCount);
+      }
+    },
+    onError: (error, variables, context) => {
       console.error("Like mutation failed:", error);
-      setLiked(!liked);
-      setOptimisticCount(initialLikeCount);
+      // Rollback to previous state from context
+      if (context) {
+        setLiked(context.liked);
+        setOptimisticCount(Math.max(0, context.count));
+      }
     },
   });
 
@@ -70,3 +89,5 @@ export function LikeButton({ postId, initialLikeCount }: LikeButtonProps) {
     </button>
   );
 }
+
+export const LikeButton = memo(LikeButtonComponent);

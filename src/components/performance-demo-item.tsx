@@ -15,7 +15,7 @@ interface Item {
 
 interface PerformanceDemoItemProps {
   item: Item;
-  searchTerm: string; // This prop causes unnecessary re-renders
+  searchTerm: string;
 }
 
 export function PerformanceDemoItem({ item, searchTerm }: PerformanceDemoItemProps) {
@@ -23,33 +23,35 @@ export function PerformanceDemoItem({ item, searchTerm }: PerformanceDemoItemPro
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Expensive computation that runs on every render - performance issue #3
-  const highlightedName = item.name.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
-    <span
-      key={i}
-      className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
-    >
-      {part}
-    </span>
-  ));
+  // Simple highlight computation (no memoization for demo)
+  const highlightedName = searchTerm 
+    ? item.name.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
+        <span
+          key={i}
+          className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
+        >
+          {part}
+        </span>
+      ))
+    : null;
 
-  // Another expensive computation - performance issue #4
-  const highlightedDescription = item.description.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
-    <span
-      key={i}
-      className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
-    >
-      {part}
-    </span>
-  ));
+  const highlightedDescription = searchTerm
+    ? item.description.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) => (
+        <span
+          key={i}
+          className={part.toLowerCase() === searchTerm.toLowerCase() ? 'bg-yellow-200' : ''}
+        >
+          {part}
+        </span>
+      ))
+    : null;
 
-  // Expensive operation that doesn't need to run on every render
   const relatedItems = Array.from({ length: 10 }, (_, i) => ({
     id: item.id * 100 + i,
     name: `Related ${i}`,
   }));
 
-  // Simulating some complex calculations
+  // Simple calculations
   const discountPrice = item.price * 0.9;
   const taxAmount = discountPrice * 0.08;
   const totalPrice = (discountPrice + taxAmount) * quantity;

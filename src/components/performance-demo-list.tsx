@@ -25,17 +25,21 @@ export function PerformanceDemoList() {
   const [sortBy, setSortBy] = useState("name");
   const [showInStockOnly, setShowInStockOnly] = useState(false);
 
-  // This filter runs on every render - performance issue #1
+  // Simple filter and sort (no memoization for demo)
+  const categories = ["all", ...Array.from(new Set(ITEMS.map(item => item.category)))];
+
+  const lowerSearchTerm = searchTerm.toLowerCase();
   const filteredItems = ITEMS.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesSearch =
+      item.name.toLowerCase().includes(lowerSearchTerm) ||
+      item.description.toLowerCase().includes(lowerSearchTerm);
+    const matchesCategory =
+      selectedCategory === "all" || item.category === selectedCategory;
     const matchesStock = !showInStockOnly || item.inStock;
-    
+
     return matchesSearch && matchesCategory && matchesStock;
   });
 
-  // This sort runs on every render - performance issue #2
   const sortedItems = [...filteredItems].sort((a, b) => {
     switch (sortBy) {
       case "name":
@@ -48,9 +52,6 @@ export function PerformanceDemoList() {
         return 0;
     }
   });
-
-  // Generate categories for filter
-  const categories = ["all", ...Array.from(new Set(ITEMS.map(item => item.category)))];
 
   return (
     <div className="space-y-6">
@@ -123,11 +124,7 @@ export function PerformanceDemoList() {
       {/* The expensive list - renders all items without virtualization */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {sortedItems.map((item) => (
-          <PerformanceDemoItem
-            key={item.id}
-            item={item}
-            searchTerm={searchTerm} // Passing searchTerm causes unnecessary re-renders
-          />
+          <PerformanceDemoItem key={item.id} item={item} searchTerm={searchTerm} />
         ))}
       </div>
     </div>

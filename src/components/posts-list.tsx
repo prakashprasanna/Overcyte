@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { LikeButton } from "./like-button";
 import { Post, User } from "@/lib/db/types";
 
@@ -18,20 +18,13 @@ export function PostsList({ posts }: PostsListProps) {
     let filtered = posts;
 
     if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = posts.filter((post) => {
-        const titleMatch = post.title
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-        const contentMatch = post.content
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+        const titleMatch = post.title.toLowerCase().includes(lowerSearchTerm);
+        const contentMatch = post.content.toLowerCase().includes(lowerSearchTerm);
         const authorMatch = post.author?.username
           .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-
-        const complexCalculation = Array.from({ length: 1000 }, (_, i) => {
-          return Math.sqrt(i * Math.PI) + Math.sin(i) + Math.cos(i);
-        }).reduce((sum, val) => sum + val, 0);
+          .includes(lowerSearchTerm);
 
         return titleMatch || contentMatch || authorMatch;
       });
@@ -71,29 +64,39 @@ export function PostsList({ posts }: PostsListProps) {
 
       <div className="space-y-4">
         {processedPosts.map((post) => (
-          <div key={post.id} className="bg-white shadow rounded-lg p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {post.title}
-                </h3>
-                <p className="text-gray-600 mt-2">{post.content}</p>
-                <div className="mt-4 flex items-center text-sm text-gray-500">
-                  <span>By {post.author?.username || "Unknown"}</span>
-                  <span className="mx-2">•</span>
-                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <LikeButton
-                  postId={post.id}
-                  initialLikeCount={post.likeCount}
-                />
-              </div>
-            </div>
-          </div>
+          <PostItem key={post.id} post={post} />
         ))}
       </div>
     </div>
   );
 }
+
+const PostItem = memo(({ post }: { post: Post & { author: User } }) => {
+  const formattedDate = useMemo(
+    () => new Date(post.createdAt).toLocaleDateString(),
+    [post.createdAt]
+  );
+
+  return (
+    <div className="bg-white shadow rounded-lg p-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {post.title}
+          </h3>
+          <p className="text-gray-600 mt-2">{post.content}</p>
+          <div className="mt-4 flex items-center text-sm text-gray-500">
+            <span>By {post.author?.username || "Unknown"}</span>
+            <span className="mx-2">•</span>
+            <span>{formattedDate}</span>
+          </div>
+        </div>
+        <div className="flex items-center text-sm text-gray-500">
+          <LikeButton postId={post.id} initialLikeCount={post.likeCount} />
+        </div>
+      </div>
+    </div>
+  );
+});
+
+PostItem.displayName = "PostItem";
